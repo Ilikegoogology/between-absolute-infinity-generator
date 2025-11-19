@@ -4,11 +4,10 @@
 <meta charset="UTF-8">
 <title>Googology Number Generator</title>
 <style>
-  body { font-family: sans-serif; background: #111; color: #fff; padding: 40px; }
-  .card { background: #222; padding: 20px; border-radius: 15px; max-width: 800px; margin: auto; }
-  input { width: 100%; padding: 10px; font-size: 1.2rem; border-radius: 10px; border: none; margin-top: 10px; }
-  button { padding: 10px 20px; font-size: 1rem; border-radius: 10px; border: none; cursor: pointer; margin-top: 15px; margin-right: 10px; background: #6f6cff; color: white; }
-  pre { background: #000; padding: 15px; border-radius: 10px; margin-top: 20px; }
+  body { font-family: sans-serif; background:#111; color:#fff; padding:40px; }
+  .card { background:#222; padding:20px; border-radius:15px; max-width:800px; margin:auto; }
+  input { width:100%; padding:12px; font-size:1.2rem; border-radius:10px; border:none; margin-top:10px; }
+  pre { background:#000; padding:15px; border-radius:10px; margin-top:20px; }
 </style>
 </head>
 <body>
@@ -16,8 +15,7 @@
 <h1>Googology Number Generator</h1>
 
 <div class="card">
-  <input id="expr" placeholder="Enter expression: 10^^^47, 3↑↑4, 2^1000, 1/47">
-  <button onclick="evaluate()">Evaluate</button>
+  <input id="expr" placeholder="Enter expression: 10^^^^477, 3↑↑4, 1/47">
   <pre id="out"></pre>
 </div>
 
@@ -40,42 +38,39 @@ function knuth(a, arrows, b) {
 function evaluateExpression(expr) {
   expr = expr.replace(/\s+/g, '');
 
-  // FRACTIONS like 1/47
+  // Fractions like 1/47
   if (/^\d+\/\d+$/.test(expr)) {
     let [n, d] = expr.split('/').map(Number);
     return (n / d).toString();
   }
 
-  // UNIFY ARROWS (treat ↑ as ^)
+  // Convert ↑ to ^
   expr = expr.replace(/↑/g, '^');
 
-  // ARROW OPERATORS (Knuth)
+  // Knuth arrows ^^^...
   const match = expr.match(/^(\d+)(\^{2,})(\d+)$/);
   if (match) {
     let base = Number(match[1]);
     let arrows = match[2].length;
-    let power = Number(match[3]);
-    return knuth(base, arrows, power).toString();
+    let height = Number(match[3]);
+    return knuth(base, arrows, height).toString();
   }
 
-  // NORMAL EXPONENT (e.g. 2^1000)
+  // Basic exponent like 2^1000
   const exp = expr.match(/^(\d+)\^(\d+)$/);
   if (exp) {
-    let a = BigInt(exp[1]);
-    let b = BigInt(exp[2]);
-    return (a ** b).toString();
+    return (BigInt(exp[1]) ** BigInt(exp[2])).toString();
   }
 
-  return "Could not parse expression: " + expr;
+  return "";
 }
 
-function evaluate() {
-  let expr = document.getElementById("expr").value;
-  let out = evaluateExpression(expr);
-  document.getElementById("out").textContent = out;
-}
+// Auto-eval when typing
+document.getElementById("expr").addEventListener("input", () => {
+  const expr = document.getElementById("expr").value;
+  document.getElementById("out").textContent = evaluateExpression(expr);
+});
 </script>
 
 </body>
 </html>
-
