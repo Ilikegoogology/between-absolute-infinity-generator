@@ -2,72 +2,13 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Googology Number Generator & Evaluator</title>
+<title>Googology Number Generator</title>
 <style>
-  body {
-    font-family: 'Inter', sans-serif;
-    background: linear-gradient(to bottom right, #2f2f74, #131327);
-    color: white;
-    padding: 40px;
-    margin: 0;
-  }
-
-  h1 {
-    font-size: 2.6rem;
-    text-align: center;
-    margin-bottom: 20px;
-  }
-
-  .card {
-    background: rgba(255,255,255,0.1);
-    border-radius: 20px;
-    padding: 25px;
-    max-width: 900px;
-    margin: 0 auto 30px;
-    box-shadow: 0 0 20px rgba(0,0,0,0.4);
-    backdrop-filter: blur(10px);
-  }
-
-  input {
-    width: 100%;
-    padding: 15px;
-    font-size: 1.2rem;
-    border-radius: 12px;
-    border: none;
-    margin-top: 10px;
-  }
-
-  button {
-    padding: 15px 25px;
-    font-size: 1.1rem;
-    border: none;
-    border-radius: 10px;
-    cursor: pointer;
-    margin-top: 15px;
-    margin-right: 10px;
-    background: #6f6cff;
-    color: white;
-    transition: 0.2s;
-  }
-
-  button:hover {
-    background: #857dff;
-  }
-
-  pre {
-    white-space: pre-wrap;
-    word-wrap: break-word;
-    padding: 20px;
-    background: rgba(255,255,255,0.08);
-    border-radius: 15px;
-    margin-top: 15px;
-    font-size: 1.1rem;
-  }
-
-  .label {
-    font-size: 1.2rem;
-    margin-top: 10px;
-  }
+  body { font-family: sans-serif; background: #111; color: #fff; padding: 40px; }
+  .card { background: #222; padding: 20px; border-radius: 15px; max-width: 800px; margin: auto; }
+  input { width: 100%; padding: 10px; font-size: 1.2rem; border-radius: 10px; border: none; margin-top: 10px; }
+  button { padding: 10px 20px; font-size: 1rem; border-radius: 10px; border: none; cursor: pointer; margin-top: 15px; margin-right: 10px; background: #6f6cff; color: white; }
+  pre { background: #000; padding: 15px; border-radius: 10px; margin-top: 20px; }
 </style>
 </head>
 <body>
@@ -75,25 +16,23 @@
 <h1>Googology Number Generator</h1>
 
 <div class="card">
-  <div class="label">Enter or generate a googology expression:</div>
-  <input id="expr" placeholder="Example: 10^^^47, 3↑↑↑4, 2^1000">
-
+  <input id="expr" placeholder="Enter expression: 10^^^47, 3↑↑4, 2^1000, 1/47">
   <button onclick="evaluate()">Evaluate</button>
-  <button onclick="randomExpression()">Generate Random</button>
-
-  <h2>Output:</h2>
   <pre id="out"></pre>
 </div>
 
 <script>
 // Knuth arrow recursion
 function knuth(a, arrows, b) {
-  if (arrows === 1) return BigInt(a) ** BigInt(b);
-  if (b === 0) return 1n;
+  a = BigInt(a);
+  b = BigInt(b);
 
-  let result = BigInt(a);
-  for (let i = 1; i < b; i++) {
-    result = knuth(a, arrows - 1, result);
+  if (arrows === 1) return a ** b;
+  if (b === 0n) return 1n;
+
+  let result = a;
+  for (let i = 1n; i < b; i++) {
+    result = knuth(result, arrows - 1, a);
   }
   return result;
 }
@@ -101,14 +40,17 @@ function knuth(a, arrows, b) {
 function evaluateExpression(expr) {
   expr = expr.replace(/\s+/g, '');
 
-  // Fractions like 1/47
+  // FRACTIONS like 1/47
   if (/^\d+\/\d+$/.test(expr)) {
     let [n, d] = expr.split('/').map(Number);
     return (n / d).toString();
   }
 
-  // Knuth arrows (↑ or ^)
-  const match = expr.match(/^(\d+)(↑+|\^+)(\d+)$/);
+  // UNIFY ARROWS (treat ↑ as ^)
+  expr = expr.replace(/↑/g, '^');
+
+  // ARROW OPERATORS (Knuth)
+  const match = expr.match(/^(\d+)(\^{2,})(\d+)$/);
   if (match) {
     let base = Number(match[1]);
     let arrows = match[2].length;
@@ -116,51 +58,24 @@ function evaluateExpression(expr) {
     return knuth(base, arrows, power).toString();
   }
 
-  // Basic exponent
-  if (/^\d+\^\d+$/.test(expr)) {
-    let [a, b] = expr.split('^').map(Number);
-    return (BigInt(a) ** BigInt(b)).toString();
+  // NORMAL EXPONENT (e.g. 2^1000)
+  const exp = expr.match(/^(\d+)\^(\d+)$/);
+  if (exp) {
+    let a = BigInt(exp[1]);
+    let b = BigInt(exp[2]);
+    return (a ** b).toString();
   }
 
-  return "Could not parse expression.";
-}
-
-// Random googology expression generator
-function randomExpression() {
-  const types = ["arrow", "exp", "fraction"];
-  const pick = types[Math.floor(Math.random() * types.length)];
-
-  let expr = "";
-
-  if (pick === "arrow") {
-    let base = Math.ceil(Math.random() * 10);
-    let arrows = Math.floor(Math.random() * 6) + 2; // 2–7 arrows
-    let height = Math.floor(Math.random() * 500) + 2;
-    expr = `${base}${"^".repeat(arrows)}${height}`;
-  }
-
-  else if (pick === "exp") {
-    let a = Math.floor(Math.random() * 20) + 2;
-    let b = Math.floor(Math.random() * 2000) + 50;
-    expr = `${a}^${b}`;
-  }
-
-  else if (pick === "fraction") {
-    let n = Math.floor(Math.random() * 100) + 1;
-    let d = Math.floor(Math.random() * 200) + 1;
-    expr = `${n}/${d}`;
-  }
-
-  document.getElementById("expr").value = expr;
-  document.getElementById("out").textContent = "Generated: " + expr;
+  return "Could not parse expression: " + expr;
 }
 
 function evaluate() {
-  const expr = document.getElementById("expr").value;
-  const result = evaluateExpression(expr);
-  document.getElementById("out").textContent = result;
+  let expr = document.getElementById("expr").value;
+  let out = evaluateExpression(expr);
+  document.getElementById("out").textContent = out;
 }
 </script>
 
 </body>
 </html>
+
